@@ -1,9 +1,7 @@
 import os
 import cv2
 import tqdm
-
-import os
-import cv2
+from pathlib import Path
 
 class Position:
     """
@@ -125,7 +123,7 @@ class Position:
             raise TypeError(f"'height' must be 'int', but got {type(height).__name__}")
         self._height = height
 
-def get_video_name() -> os.PathLike:
+def get_video_path() -> os.PathLike:
     """
     Prompt the user for a video file path until a valid one is provided.
 
@@ -213,8 +211,12 @@ def draw_grid(new_frame, position: Position, color=(0, 255, 0), thickness=1):
 
 
 
+video_path = get_video_path()
+folder = get_folder_to_save()
 
-cap = cv2.VideoCapture(get_video_name())
+name = Path(video_path).name
+
+cap = cv2.VideoCapture(video_path)
 frames_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 skip = get_count_to_skip(max_frames=frames_count)
 
@@ -227,28 +229,31 @@ with tqdm.tqdm(total=frames_count) as pbar:
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
-            break  # Если фрейм не был успешно прочитан, выходим из цикла
+            break
 
-        height, width = frame.shape[:2]  # Извлекаем высоту и ширину кадра
+        height, width = frame.shape[:2]
 
         if skip > 0:
             skip -= 1
-            cv2.imshow('frame', frame)  # Показать текущий кадр
+            cv2.putText(frame, 'SKIPPING', (int(width / 2) - len('SKIPPING') * 15, int(height / 2)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
+
+            cv2.imshow('frame', frame)
             if cv2.waitKey(1) == ord('q'):
                 break
             pbar.update(1)
             continue
 
-        print(pos.x, pos.y, pos.height, pos.width)
         next_frame_flag = False
 
         while not next_frame_flag:
             new_frame = frame.copy()
-            draw_grid(new_frame, pos)  # Рисуем сетку на копии кадра
+            draw_grid(new_frame, pos)
+            test = f"frame {pbar.n} of {frames_count}: {name}"
+            cv2.putText(new_frame, test, (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 1)
             cv2.imshow('frame', new_frame)
 
-            key = cv2.waitKey(0)  # Ждем, пока клавиша не будет нажата
-            print(key)
+            key = cv2.waitKey(0)
             match key:
                 case _ if key == ord('a'):
                     pos.x = max(0, pos.x - pos.x_step)
@@ -258,9 +263,13 @@ with tqdm.tqdm(total=frames_count) as pbar:
                     pos.y = max(0, pos.y - pos.y_step)
                 case _ if key == ord('s'):
                     pos.y = min(height - pos.height, pos.y + pos.y_step)
+                case _ if key == ord('k'):
+
+                    cropped_image = frame[pos.y: pos.y + pos.height, pos.x: pos.x + pos.width]
+                    # cv2.imshow('croped', cropped_image)
+                    cv2.imwrite(os.path.join(folder, f"{name.split(' ')[0]}_{pbar.n}.png"), cropped_image)
                 case _ if key == ord(' '):
                     next_frame_flag = True
-
         pbar.update(1)
 cap.release()
 cv2.destroyAllWindows()
