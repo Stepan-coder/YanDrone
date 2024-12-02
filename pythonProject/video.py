@@ -2,12 +2,14 @@ import os
 import cv2
 import torch
 import warnings
+import numpy as np
 
 warnings.filterwarnings('ignore')
 
+torch.device("mps")
 model = torch.hub.load('yolov5', 'custom', path='best.pt', source='local', force_reload=True)
-model.conf = 0.5
-cap = cv2.VideoCapture('Гоночки.mp4')
+model.conf = 0.7
+cap = cv2.VideoCapture('IMG_2037.MOV')
 
 def model_drone_detecting(frame, treshhold: float):
     detected = []
@@ -28,19 +30,33 @@ def model_drone_detecting(frame, treshhold: float):
 counter = 0
 while cap.isOpened():
     ret, frame = cap.read()
-    # height = frame.shape[0]
-    # width = frame.shape[1]
-    # for h in range(int(height / 320)):
-    #     for w in range(int(width / 320)):
-    #         cropped_image = frame[h * 320: (h + 1) * 320, w * 320: (w + 1) * 320]
-    #         # cv2.imshow(f'frame_{h}_{w}', cropped_image) # view of the small frames
-    #         detected = model_drone_detecting(cropped_image, 0.1)
-    #         for drone in detected:
-    #             cv2.rectangle(frame,
-    #                           (w * 320 + drone[0], h * 320 + drone[1]),
-    #                           (w * 320 + drone[2], h * 320 + drone[3]), (0, 255, 0), 2)
+    frame = cv2.convertScaleAbs(frame, alpha=1.1, beta=0)
+
+    # Определение ядра для увеличения резкости
+    sharpening_kernel = np.array([[0, -1, 0],
+                                  [-1, 5, -1],
+                                  [0, -1, 0]])
+
+    # Применение фильтра к изображению
+    frame = cv2.filter2D(frame, -1, sharpening_kernel)
+
+    height = frame.shape[0]
+    width = frame.shape[1]
+    more_then_treshhold = False
+    for h in range(int(height / 320)):
+        for w in range(int(width / 320)):
+            cropped_image = frame[h * 320: (h + 1) * 320, w * 320: (w + 1) * 320]
+            # cv2.imshow(f'frame_{h}_{w}', cropped_image) # view of the small frames
+            detected = model_drone_detecting(cropped_image, 0.4)
+            if len(detected) > 0:
+                more_then_treshhold = True
+            for drone in detected:
+                cv2.rectangle(frame,
+                              (w * 320 + drone[0], h * 320 + drone[1]),
+                              (w * 320 + drone[2], h * 320 + drone[3]), (0, 255, 0), 2)
     cv2.imshow(f'frame', frame)
-    cv2.imwrite(os.path.join(os.getcwd(), 'video', f"video_{counter}.jpg"), frame)
+    # if more_then_treshhold:
+    cv2.imwrite(os.path.join(os.getcwd(), 'new_video', f"video_8280_{counter}>85.jpg"), frame)
     print(counter)
     counter += 1
     # img[80:280, 150:330]
