@@ -1,7 +1,13 @@
 import os
 import cv2
 import tqdm
+import numpy as np
 from pathlib import Path
+from cv2 import dnn_superres
+
+
+# pip install --upgrade opencv-python
+# pip install --upgrade opencv-contrib-python
 
 class Position:
     """
@@ -209,6 +215,56 @@ def draw_grid(new_frame, position: Position, color=(0, 255, 0), thickness=1):
                   (position.x, position.y),
                   (position.x + position.width, position.y + position.height), color, 2)
 
+def zoom_image(image: np.ndarray, x: int, y: int, width: int, height: int, factor: float) -> np.ndarray:
+    """
+    Zooms into a specified area of the image by the given factor.
+
+    Args:
+        image (np.ndarray): The original image.
+        x (int): X-coordinate of the top-left corner of the area.
+        y (int): Y-coordinate of the top-left corner of the area.
+        width (int): Width of the area.
+        height (int): Height of the area.
+        factor (float): Zoom factor (e.g., 2.0 for double size).
+
+    Returns:
+        np.ndarray: The zoomed image.
+    """
+
+    # Crop the specified area
+    cropped = image[y:y + height, x:x + width]
+
+    # Check if the cropped area is valid
+    if cropped.size == 0:
+        raise ValueError("The specified area exceeds the image boundaries.")
+
+    return cv2.resize(cropped, None, fx=factor, fy=factor, interpolation=cv2.INTER_LINEAR)
+
+
+def zoom_neuro_image(image: np.ndarray, x: int, y: int, width: int, height: int) -> np.ndarray:
+    """
+    Zooms into a specified area of the image by the given factor.
+
+    Args:
+        image (np.ndarray): The original image.
+        x (int): X-coordinate of the top-left corner of the area.
+        y (int): Y-coordinate of the top-left corner of the area.
+        width (int): Width of the area.
+        height (int): Height of the area.
+        factor (float): Zoom factor (e.g., 2.0 for double size).
+
+    Returns:
+        np.ndarray: The zoomed image.
+    """
+
+    # Crop the specified area
+    cropped = image[y:y + height, x:x + width]
+
+    # Check if the cropped area is valid
+    if cropped.size == 0:
+        raise ValueError("The specified area exceeds the image boundaries.")
+
+    return sr.upsample(cropped)
 
 
 video_path = get_video_path()
@@ -220,11 +276,15 @@ cap = cv2.VideoCapture(video_path)
 frames_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 skip = get_count_to_skip(max_frames=frames_count)
 
+sr = dnn_superres.DnnSuperResImpl_create()
+sr.readModel("FSRCNN_x4.pb")
+sr.setModel("fsrcnn", 4)
+
 # Инициализация позиции
 pos = Position(3)
 pos.height = 640
 pos.width = 640
-
+is_zoom = False
 with tqdm.tqdm(total=frames_count) as pbar:
     while cap.isOpened():
         ret, frame = cap.read()
@@ -235,6 +295,8 @@ with tqdm.tqdm(total=frames_count) as pbar:
 
         if skip > 0:
             skip -= 1
+            test = f"frame {pbar.n} of {frames_count}: {name}"
+            cv2.putText(frame, test, (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
             cv2.putText(frame, 'SKIPPING', (int(width / 2) - len('SKIPPING') * 15, int(height / 2)),
                         cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
 
@@ -245,13 +307,25 @@ with tqdm.tqdm(total=frames_count) as pbar:
             continue
 
         next_frame_flag = False
-
         while not next_frame_flag:
             new_frame = frame.copy()
             draw_grid(new_frame, pos)
             test = f"frame {pbar.n} of {frames_count}: {name}"
-            cv2.putText(new_frame, test, (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 1)
+            cv2.putText(new_frame, test, (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+
             cv2.imshow('frame', new_frame)
+
+            if is_zoom:
+                cv2.imshow('zoomed_area',
+                           zoom_image(image=frame, x=pos.x, y=pos.y, width=pos.width, height=pos.height, factor=3))
+
+
+                zoomed = zoom_image(image=frame, x=pos.x, y=pos.y, width=pos.width, height=pos.height, factor=4)
+                cv2.imshow('zoomed_model_area', zoom_neuro_image(image=frame, x=pos.x, y=pos.y, width=pos.width, height=pos.height))
+
+            else:
+                cv2.destroyWindow('zoomed_area')
+                cv2.destroyWindow('zoomed_model_area')
 
             key = cv2.waitKey(0)
             match key:
@@ -264,12 +338,17 @@ with tqdm.tqdm(total=frames_count) as pbar:
                 case _ if key == ord('s'):
                     pos.y = min(height - pos.height, pos.y + pos.y_step)
                 case _ if key == ord('k'):
-
                     cropped_image = frame[pos.y: pos.y + pos.height, pos.x: pos.x + pos.width]
                     # cv2.imshow('croped', cropped_image)
                     cv2.imwrite(os.path.join(folder, f"{name.split(' ')[0]}_{pbar.n}.png"), cropped_image)
+                case _ if key == ord('z'):
+                    is_zoom = not is_zoom
                 case _ if key == ord(' '):
                     next_frame_flag = True
         pbar.update(1)
 cap.release()
 cv2.destroyAllWindows()
+
+
+# /Users/stepanborodin/Desktop/Projects/Yan/YanDrone/pythonProject/videos/IMG_8444.MOV
+# /Users/stepanborodin/Desktop/Projects/Yan/YanDrone/pythonProject/drones
