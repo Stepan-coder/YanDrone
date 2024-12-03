@@ -209,7 +209,7 @@ def draw_grid(new_frame, position: Position, color=(0, 255, 0), thickness=1):
 
     cv2.rectangle(new_frame,
                   (position.x, position.y),
-                  (position.x + position.width, position.y + position.height), color, 2)
+                  (position.x + position.width, position.y + position.height), color, thickness + 1)
 
 def zoom_image(image: np.ndarray, x: int, y: int, width: int, height: int, factor: float) -> np.ndarray:
     """
@@ -275,15 +275,17 @@ with tqdm.tqdm(total=frames_count) as pbar:
         next_frame_flag = False
         while not next_frame_flag:
             new_frame = frame.copy()
-            draw_grid(new_frame, pos)
+            draw_grid(new_frame, pos, thickness=1 + int(max(width, height) / 1000))
             test = f"frame {pbar.n} of {frames_count}: {name}"
             cv2.putText(new_frame, test, (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
             cv2.imshow('frame', new_frame)
 
             if is_zoom:
-                cv2.imshow('zoomed_area',
-                           zoom_image(image=frame, x=pos.x, y=pos.y, width=pos.width, height=pos.height, factor=3))
+                zoomed = zoom_image(image=frame, x=pos.x, y=pos.y, width=pos.width, height=pos.height, factor=3)
+                test = f"frame {pbar.n} of {frames_count}: {name}"
+                cv2.putText(zoomed, test, (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                cv2.imshow('zoomed_area', zoomed)
             else:
                 cv2.destroyWindow('zoomed_area')
 
@@ -305,6 +307,8 @@ with tqdm.tqdm(total=frames_count) as pbar:
                     is_zoom = not is_zoom
                 case _ if key == ord(' '):
                     next_frame_flag = True
+                case _ if key == ord('b'):
+                    exit()
         pbar.update(1)
 cap.release()
 cv2.destroyAllWindows()
