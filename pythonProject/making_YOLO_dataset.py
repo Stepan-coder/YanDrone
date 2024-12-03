@@ -3,11 +3,7 @@ import cv2
 import tqdm
 import numpy as np
 from pathlib import Path
-from cv2 import dnn_superres
 
-
-# pip install --upgrade opencv-python
-# pip install --upgrade opencv-contrib-python
 
 class Position:
     """
@@ -241,32 +237,6 @@ def zoom_image(image: np.ndarray, x: int, y: int, width: int, height: int, facto
     return cv2.resize(cropped, None, fx=factor, fy=factor, interpolation=cv2.INTER_LINEAR)
 
 
-def zoom_neuro_image(image: np.ndarray, x: int, y: int, width: int, height: int) -> np.ndarray:
-    """
-    Zooms into a specified area of the image by the given factor.
-
-    Args:
-        image (np.ndarray): The original image.
-        x (int): X-coordinate of the top-left corner of the area.
-        y (int): Y-coordinate of the top-left corner of the area.
-        width (int): Width of the area.
-        height (int): Height of the area.
-        factor (float): Zoom factor (e.g., 2.0 for double size).
-
-    Returns:
-        np.ndarray: The zoomed image.
-    """
-
-    # Crop the specified area
-    cropped = image[y:y + height, x:x + width]
-
-    # Check if the cropped area is valid
-    if cropped.size == 0:
-        raise ValueError("The specified area exceeds the image boundaries.")
-
-    return sr.upsample(cropped)
-
-
 video_path = get_video_path()
 folder = get_folder_to_save()
 
@@ -275,10 +245,6 @@ name = Path(video_path).name
 cap = cv2.VideoCapture(video_path)
 frames_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 skip = get_count_to_skip(max_frames=frames_count)
-
-sr = dnn_superres.DnnSuperResImpl_create()
-sr.readModel("FSRCNN_x4.pb")
-sr.setModel("fsrcnn", 4)
 
 # Инициализация позиции
 pos = Position(3)
@@ -318,14 +284,8 @@ with tqdm.tqdm(total=frames_count) as pbar:
             if is_zoom:
                 cv2.imshow('zoomed_area',
                            zoom_image(image=frame, x=pos.x, y=pos.y, width=pos.width, height=pos.height, factor=3))
-
-
-                zoomed = zoom_image(image=frame, x=pos.x, y=pos.y, width=pos.width, height=pos.height, factor=4)
-                cv2.imshow('zoomed_model_area', zoom_neuro_image(image=frame, x=pos.x, y=pos.y, width=pos.width, height=pos.height))
-
             else:
                 cv2.destroyWindow('zoomed_area')
-                cv2.destroyWindow('zoomed_model_area')
 
             key = cv2.waitKey(0)
             match key:
