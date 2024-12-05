@@ -32,3 +32,5 @@ for file in os.listdir('drones'):
 
 cv2.waitKey(0)  # Ждем нажатия клавиши
 cv2.destroyAllWindows()  # Закрываем окна
+
+# python train.py --img 925 --batch 8 --epochs 5 --data /Users/stepanborodin/Desktop/Projects/Yan/YanDrone/pythonProject/dataset/data.yaml --weights yolov5l.pt  --nosave --cache

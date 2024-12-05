@@ -287,7 +287,10 @@ with tqdm.tqdm(total=frames_count) as pbar:
                 cv2.putText(zoomed, test, (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
                 cv2.imshow('zoomed_area', zoomed)
             else:
-                cv2.destroyWindow('zoomed_area')
+                try:
+                    cv2.destroyWindow('zoomed_area')
+                except:
+                    pass
 
             key = cv2.waitKey(0)
             match key:
@@ -302,12 +305,12 @@ with tqdm.tqdm(total=frames_count) as pbar:
                 case _ if key == ord('k'):
                     cropped_image = frame[pos.y: pos.y + pos.height, pos.x: pos.x + pos.width]
                     # cv2.imshow('croped', cropped_image)
-                    cv2.imwrite(os.path.join(folder, f"{name.split(' ')[0]}_{pbar.n}.png"), cropped_image)
+                    cv2.imwrite(f"{name.split(' ')[0]}_{pbar.n}.png", cropped_image)
                 case _ if key == ord('z'):
                     is_zoom = not is_zoom
                 case _ if key == ord(' '):
                     next_frame_flag = True
-                case _ if key == ord('b'):
+                case _ if key == ord('q'):
                     exit()
         pbar.update(1)
 cap.release()

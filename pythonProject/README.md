@@ -27,8 +27,6 @@ pip install tqdm
 - **opencv**: You can install it via pip:
 ```bash
 pip install opencv-python
-pip install --upgrade opencv-python
-pip install --upgrade opencv-contrib-python
 ```
 
 ## Usage
