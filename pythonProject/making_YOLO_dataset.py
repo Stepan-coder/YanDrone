@@ -3,7 +3,7 @@ import cv2
 import tqdm
 import numpy as np
 from pathlib import Path
-
+from typing import Tuple
 
 class Position:
     """
