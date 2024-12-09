@@ -4,6 +4,9 @@ import tqdm
 import numpy as np
 from pathlib import Path
 
+from jinja2.nodes import Tuple
+from nltk.corpus import reuters
+
 
 class Position:
     """
@@ -184,12 +187,24 @@ def get_count_to_skip(max_frames: int) -> int:
         try:
             frames_to_skip = int(input("How many frames to skip (0 to {}): ".format(max_frames)).strip())
             if not (0 <= frames_to_skip <= max_frames):
-                raise Exception(f"The value must be in the range from 0 to {max_frames}.")
+                raise ValueError(f"The value must be in the range from 0 to {max_frames}.")
             return frames_to_skip
         except ValueError:
-            raise Exception("The value you entered could not be converted to a number. Please enter a valid number.")
+            raise ValueError("The value you entered could not be converted to a number. Please enter a valid number.")
 
-def draw_grid(new_frame, position: Position, color=(0, 255, 0), thickness=1):
+
+def get_screen_resolution() -> Tuple(int, int):
+    screen = input("Enter the resolution of your screen in the format WxH, for example, 1920x1080: ").lower().strip()
+    screen_width = int(screen.split('x')[0])
+    screen_height = int(screen.split('x')[1])
+    if screen_width <= 640:
+        raise ValueError("the width value must be greater than 640")
+    if screen_height <= 640:
+        raise ValueError("the height value must be greater than 640")
+    return screen_width, screen_height
+
+
+def draw_grid(new_frame, position: Position, color=(0, 255, 0), thickness=1, k: float = 1.0):
     """
     Draw a grid on the provided frame.
 
@@ -200,16 +215,22 @@ def draw_grid(new_frame, position: Position, color=(0, 255, 0), thickness=1):
         thickness (int): Thickness of the grid lines (default is 1).
     """
     for i in range(position.devider + 1):  # +1 for the boundary
-        y = position.y + position.y_step * i
-        cv2.line(new_frame, (position.x, y), (position.x + position.width, y), color, thickness)
+        y = int(position.y * k + position.y_step * k * i)
+        cv2.line(new_frame,
+                 (int(position.x * k), y),
+                 (int(position.x * k + position.width * k), y),
+                 color, thickness)
 
     for i in range(position.devider + 1):  # +1 for the boundary
-        x = position.x + position.x_step * i
-        cv2.line(new_frame, (x, position.y), (x, position.y + position.height), color, thickness)
+        x = int(position.x * k + position.x_step * k * i)
+        cv2.line(new_frame,
+                 (x, int(position.y * k)),
+                 (x, int(position.y * k + position.height * k)), color, thickness)
 
     cv2.rectangle(new_frame,
-                  (position.x, position.y),
-                  (position.x + position.width, position.y + position.height), color, thickness + 1)
+                  (int(position.x * k), int(position.y * k)),
+                  (int(position.x * k + position.width * k),
+                   int(position.y * k + position.height * k)), color, thickness + 1)
 
 def zoom_image(image: np.ndarray, x: int, y: int, width: int, height: int, factor: float) -> np.ndarray:
     """
@@ -237,36 +258,51 @@ def zoom_image(image: np.ndarray, x: int, y: int, width: int, height: int, facto
     return cv2.resize(cropped, None, fx=factor, fy=factor, interpolation=cv2.INTER_LINEAR)
 
 
-video_path = get_video_path()
-folder = get_folder_to_save()
+def crop_image_to_screen_size(frame: np.ndarray, to_width: int, to_height: int):
+    if frame.shape[1] > to_width:
+        frame = cv2.resize(frame,
+                           (to_width, int(frame.shape[0] * to_width / frame.shape[1])),
+                           interpolation=cv2.INTER_LINEAR)
 
-name = Path(video_path).name
+    if frame.shape[0] > to_height:
+        frame = cv2.resize(frame,
+                           (int(frame.shape[1] * to_height / frame.shape[0]), to_height),
+                           interpolation=cv2.INTER_LINEAR)
+    return frame, frame.shape[0], frame.shape[1]
 
-cap = cv2.VideoCapture(video_path)
-frames_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-skip = get_count_to_skip(max_frames=frames_count)
 
-# Инициализация позиции
+
 pos = Position(3)
 pos.height = 640
 pos.width = 640
 is_zoom = False
+
+video_path = get_video_path()
+folder = get_folder_to_save()
+screen_width, screen_height = get_screen_resolution()
+
+cap = cv2.VideoCapture(video_path)
+name = Path(video_path).name
+frames_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+skip = get_count_to_skip(max_frames=frames_count)
 with tqdm.tqdm(total=frames_count) as pbar:
     while cap.isOpened():
         ret, frame = cap.read()
-        if not ret:
-            break
 
-        height, width = frame.shape[:2]
+        # sub_frame, height, width = frame.copy(), frame.shape[0], frame.shape[1]
+
+        sub_frame, height, width = crop_image_to_screen_size(frame=frame.copy(),
+                                                           to_width=screen_width,
+                                                           to_height=screen_height)
 
         if skip > 0:
             skip -= 1
             test = f"frame {pbar.n} of {frames_count}: {name}"
-            cv2.putText(frame, test, (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            cv2.putText(frame, 'SKIPPING', (int(width / 2) - len('SKIPPING') * 15, int(height / 2)),
+            cv2.putText(sub_frame, test, (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            cv2.putText(sub_frame, 'SKIPPING', (int(width / 2) - len('SKIPPING') * 15, int(height / 2)),
                         cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
 
-            cv2.imshow('frame', frame)
+            cv2.imshow('frame', sub_frame)
             if cv2.waitKey(1) == ord('q'):
                 break
             pbar.update(1)
@@ -274,8 +310,8 @@ with tqdm.tqdm(total=frames_count) as pbar:
 
         next_frame_flag = False
         while not next_frame_flag:
-            new_frame = frame.copy()
-            draw_grid(new_frame, pos, thickness=1 + int(max(width, height) / 1000))
+            new_frame = sub_frame.copy()
+            draw_grid(new_frame, pos, thickness=1 + int(max(width, height) / 1000), k=width/frame.shape[1])
             test = f"frame {pbar.n} of {frames_count}: {name}"
             cv2.putText(new_frame, test, (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
@@ -297,11 +333,11 @@ with tqdm.tqdm(total=frames_count) as pbar:
                 case _ if key == ord('a'):
                     pos.x = max(0, pos.x - pos.x_step)
                 case _ if key == ord('d'):
-                    pos.x = min(width - pos.width, pos.x + pos.x_step)
+                    pos.x = min(frame.shape[1] - pos.width, pos.x + pos.x_step)
                 case _ if key == ord('w'):
                     pos.y = max(0, pos.y - pos.y_step)
                 case _ if key == ord('s'):
-                    pos.y = min(height - pos.height, pos.y + pos.y_step)
+                    pos.y = min(frame.shape[0] - pos.height, pos.y + pos.y_step)
                 case _ if key == ord('k'):
                     cropped_image = frame[pos.y: pos.y + pos.height, pos.x: pos.x + pos.width]
                     # cv2.imshow('croped', cropped_image)
