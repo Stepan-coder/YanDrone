@@ -190,7 +190,7 @@ def get_count_to_skip(max_frames: int) -> int:
             raise ValueError("The value you entered could not be converted to a number. Please enter a valid number.")
 
 
-def get_screen_resolution() -> Tuple(int, int):
+def get_screen_resolution() -> tuple[int, int]:
     screen = input("Enter the resolution of your screen in the format WxH, for example, 1920x1080: ").lower().strip()
     screen_width = int(screen.split('x')[0])
     screen_height = int(screen.split('x')[1])
