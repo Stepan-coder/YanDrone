@@ -4,9 +4,6 @@ import tqdm
 import numpy as np
 from pathlib import Path
 
-from jinja2.nodes import Tuple
-from nltk.corpus import reuters
-
 
 class Position:
     """
