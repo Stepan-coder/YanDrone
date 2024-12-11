@@ -4,11 +4,11 @@ import imageio
 
 images = []
 
-for i in range(len(os.listdir(os.path.join(os.getcwd(), 'video'))) - 376):
-    print(f"filename={i}-", os.path.join(os.getcwd(), 'video', f"video_{i}.jpg"))
-    images.append(imageio.imread(os.path.join(os.getcwd(), 'video', f"video_{i}.jpg")))
+for i in range(len(os.listdir(os.path.join(os.getcwd(), 'new_video'))) - 1):
+    print(f"filename={i}-", os.path.join(os.getcwd(), 'new_video', f"video_{i}.jpg"))
+    images.append(imageio.imread(os.path.join(os.getcwd(), 'new_video', f"video_{i}.jpg")))
 
-imageio.mimsave(os.path.join(os.getcwd(), 'video', 'drone_detecting_new.gif'), images, duration = 0.04)
+imageio.mimsave(os.path.join(os.getcwd(), 'drone_detecting_yolov5m-set.gif'), images, duration = 0.04)
 #
 # import os
 # import cv2

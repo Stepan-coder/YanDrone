@@ -337,7 +337,6 @@ with tqdm.tqdm(total=frames_count) as pbar:
                     pos.y = min(frame.shape[0] - pos.height, pos.y + pos.y_step)
                 case _ if key == ord('k'):
                     cropped_image = frame[pos.y: pos.y + pos.height, pos.x: pos.x + pos.width]
-                    # cv2.imshow('croped', cropped_image)
                     cv2.imwrite(f"{name.split(' ')[0]}_{pbar.n}.png", cropped_image)
                 case _ if key == ord('z'):
                     is_zoom = not is_zoom
