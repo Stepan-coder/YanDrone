@@ -18,20 +18,20 @@ class Position:
     by its minimum and maximum x and y coordinates.
     """
 
-    def __init__(self, xmin: int, ymin: int, xmax: int, ymax: int):
+    def __init__(self, xmin: int = 0, ymin: int = 0, xmax: int = 0, ymax: int = 0):
         """
         Initializes the Position with the given coordinates.
 
         Parameters:
-        xmin (int): The minimum x-coordinate (must be >= 0).
-        ymin (int): The minimum y-coordinate (must be >= 0).
-        xmax (int): The maximum x-coordinate (must be >= xmin).
-        ymax (int): The maximum y-coordinate (must be >= ymin).
+        xmin (int): The minimum x-coordinate (default: 0).
+        ymin (int): The minimum y-coordinate (default: 0).
+        xmax (int): The maximum x-coordinate (default: 0).
+        ymax (int): The maximum y-coordinate (default: 0).
         """
-        self._xmin = xmin
-        self._ymin = ymin
-        self._xmax = xmax
-        self._ymax = ymax
+        self.xmin = xmin
+        self.ymin = ymin
+        self.xmax = xmax
+        self.ymax = ymax
 
     @property
     def center_x(self) -> int:
@@ -49,20 +49,16 @@ class Position:
         return self._xmin
 
     @xmin.setter
-    def xmin(self, xmin: int) -> None:
+    def xmin(self, value: int) -> None:
         """
         Sets the minimum x-coordinate.
 
         Parameters:
-        xmin (int): The minimum x-coordinate (must be >= 0 and < xmax).
+        value (int): The minimum x-coordinate (must be >= 0 and < xmax).
         """
-        if not isinstance(xmin, int):
-            raise TypeError(f"'xmin' must be 'int', but got {type(xmin).__name__}")
-        if xmin < 0:
-            raise ValueError(f"'xmin' must be greater than or equal to zero")
-        if xmin >= self.xmax:
-            raise ValueError(f"'xmin' must be less than 'xmax'")
-        self._xmin = xmin
+        self._validate_coordinate(value, "xmin")
+        self._validate_min_max(value, self.xmax, "xmin", "xmax")
+        self._xmin = value
 
     @property
     def ymin(self) -> int:
@@ -70,20 +66,16 @@ class Position:
         return self._ymin
 
     @ymin.setter
-    def ymin(self, ymin: int) -> None:
+    def ymin(self, value: int) -> None:
         """
         Sets the minimum y-coordinate.
 
         Parameters:
-        ymin (int): The minimum y-coordinate (must be >= 0 and < ymax).
+        value (int): The minimum y-coordinate (must be >= 0 and < ymax).
         """
-        if not isinstance(ymin, int):
-            raise TypeError(f"'ymin' must be 'int', but got {type(ymin).__name__}")
-        if ymin < 0:
-            raise ValueError(f"'ymin' must be greater than or equal to zero")
-        if ymin >= self.ymax:
-            raise ValueError(f"'ymin' must be less than 'ymax'")
-        self._ymin = ymin
+        self._validate_coordinate(value, "ymin")
+        self._validate_min_max(value, self.ymax, "ymin", "ymax")
+        self._ymin = value
 
     @property
     def xmax(self) -> int:
@@ -91,20 +83,16 @@ class Position:
         return self._xmax
 
     @xmax.setter
-    def xmax(self, xmax: int) -> None:
+    def xmax(self, value: int) -> None:
         """
         Sets the maximum x-coordinate.
 
         Parameters:
-        xmax (int): The maximum x-coordinate (must be >= 0 and > xmin).
+        value (int): The maximum x-coordinate (must be >= 0 and > xmin).
         """
-        if not isinstance(xmax, int):
-            raise TypeError(f"'xmax' must be 'int', but got {type(xmax).__name__}")
-        if xmax < 0:
-            raise ValueError(f"'xmax' must be greater than or equal to zero")
-        if xmax <= self.xmin:
-            raise ValueError(f"'xmax' must be greater than 'xmin'")
-        self._xmax = xmax
+        self._validate_coordinate(value, "xmax")
+        self._validate_min_max(self.xmin, value, "xmin", "xmax")
+        self._xmax = value
 
     @property
     def ymax(self) -> int:
@@ -112,20 +100,39 @@ class Position:
         return self._ymax
 
     @ymax.setter
-    def ymax(self, ymax: int) -> None:
+    def ymax(self, value: int) -> None:
         """
         Sets the maximum y-coordinate.
 
         Parameters:
-        ymax (int): The maximum y-coordinate (must be >= 0 and > ymin).
+        value (int): The maximum y-coordinate (must be >= 0 and > ymin).
         """
-        if not isinstance(ymax, int):
-            raise TypeError(f"'ymax' must be 'int', but got {type(ymax).__name__}")
-        if ymax < 0:
-            raise ValueError(f"'ymax' must be greater than or equal to zero")
-        if ymax <= self.ymin:
-            raise ValueError(f"'ymax' must be greater than 'ymin'")
-        self._ymax = ymax
+        self._validate_coordinate(value, "ymax")
+        self._validate_min_max(self.ymin, value, "ymin", "ymax")
+        self._ymax = value
+
+    def _validate_coordinate(self, value: int, name: str) -> None:
+        """
+        Validates that the coordinate is an integer and non-negative.
+
+        Raises:
+            TypeError: If the coordinate is not an integer.
+            ValueError: If the coordinate is negative.
+        """
+        if not isinstance(value, int):
+            raise TypeError(f"{name} must be an integer, but got {type(value).__name__}.")
+        if value < 0:
+            raise ValueError(f"{name} must be non-negative.")
+
+    def _validate_min_max(self, min_value: int, max_value: int, min_name: str, max_name: str) -> None:
+        """
+        Validates that the maximum coordinate is greater than the minimum coordinate.
+
+        Raises:
+            ValueError: If the maximum coordinate is not greater than the minimum coordinate.
+        """
+        if max_value <= min_value:
+            raise ValueError(f"{max_name} must be greater than {min_name}.")
 
 
 def model_drone_detecting(frame, treshhold: float):
