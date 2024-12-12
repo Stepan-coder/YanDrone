@@ -6,7 +6,7 @@ import torch
 number_of_drones = 0
 
 
-model = torch.hub.load('yolov5', 'custom', path='best.pt', source='local', force_reload=True)
+model = torch.hub.load('yolov5', 'custom', path='models/best.pt', source='local', force_reload=True)
 model.conf = 0.1
 
 for file in os.listdir('drones'):
@@ -33,4 +33,4 @@ for file in os.listdir('drones'):
 cv2.waitKey(0)  # Ждем нажатия клавиши
 cv2.destroyAllWindows()  # Закрываем окна
 
-# python train.py --img 925 --batch 8 --epochs 5 --data /Users/stepanborodin/Desktop/Projects/Yan/YanDrone/pythonProject/dataset/data.yaml --weights yolov5l.pt  --nosave --cache
+# python train.py --img 925 --batch 8 --epochs 5 --data /Users/stepanborodin/Desktop/Projects/Yan/YanDrone/pythonProject/YOLOv5_dataset/data.yaml --weights yolov5l.pt  --nosave --cache

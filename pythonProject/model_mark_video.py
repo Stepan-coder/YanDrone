@@ -135,19 +135,19 @@ class Position:
             raise ValueError(f"{max_name} must be greater than {min_name}.")
 
 
-def model_drone_detecting(frame, treshhold: float):
-    detected = []
+def model_drone_detecting(frame, threshold: float):
+    detected_drones = []
     output = model(frame)
     for i in range(len(output.pandas().xyxy[0]['name'])):
         label = output.pandas().xyxy[0]['name'][i]
         confidence = output.pandas().xyxy[0]['confidence'][i]
-        if confidence >= treshhold:
-            drone_pos = Position(xmin=int(output.pandas().xyxy[0]['xmin'][i]),
-                                 ymin=int(output.pandas().xyxy[0]['ymin'][i]),
-                                 xmax=int(output.pandas().xyxy[0]['xmax'][i]),
-                                 ymax=int(output.pandas().xyxy[0]['ymax'][i]))
-            detected.append(drone_pos)
-    return detected
+        if confidence >= threshold:
+            xmin = int(output.pandas().xyxy[0]['xmin'][i])
+            ymin = int(output.pandas().xyxy[0]['ymin'][i])
+            xmax = int(output.pandas().xyxy[0]['xmax'][i])
+            ymax = int(output.pandas().xyxy[0]['ymax'][i])
+            detected_drones.append(Position(xmin=xmin, ymin=ymin, xmax=xmax, ymax=ymax))
+    return detected_drones
 
 def draw_drone_area(frame, pos: Position, color):
     min_size = min(pos.xmax - pos.xmin, pos.ymax - pos.ymin)

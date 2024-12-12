@@ -32,22 +32,22 @@ class Position:
 
     @property
     def devider(self) -> int:
-        """Return the number of divisions."""
+        """Get the number of divisions for the grid."""
         return self._devider
 
     @property
     def x_step(self) -> int:
-        """Return the step size for the x-axis based on width and devider."""
-        return int(self._width / self._devider)
+        """Calculate the step size for the x-axis based on width and devider."""
+        return int(self.width / self.devider)
 
     @property
     def y_step(self) -> int:
-        """Return the step size for the y-axis based on height and devider."""
-        return int(self._height / self._devider)
+        """Calculate the step size for the y-axis based on height and devider."""
+        return int(self.height / self.devider)
 
     @property
     def x(self) -> int:
-        """Return the x-coordinate."""
+        """Get the x-coordinate."""
         return self._x
 
     @x.setter
@@ -56,10 +56,7 @@ class Position:
         Set the x-coordinate.
 
         Args:
-            x (int): The x-coordinate to set.
-
-        Raises:
-            TypeError: If x is not an integer.
+            x (int): The new x-coordinate to set.
         """
         if not isinstance(x, int):
             raise TypeError(f"'x' must be 'int', but got {type(x).__name__}")
@@ -67,7 +64,7 @@ class Position:
 
     @property
     def y(self) -> int:
-        """Return the y-coordinate."""
+        """Get the y-coordinate."""
         return self._y
 
     @y.setter
@@ -76,10 +73,7 @@ class Position:
         Set the y-coordinate.
 
         Args:
-            y (int): The y-coordinate to set.
-
-        Raises:
-            TypeError: If y is not an integer.
+            y (int): The new y-coordinate to set.
         """
         if not isinstance(y, int):
             raise TypeError(f"'y' must be 'int', but got {type(y).__name__}")
@@ -87,7 +81,7 @@ class Position:
 
     @property
     def width(self) -> int:
-        """Return the width of the rectangle."""
+        """Get the width of the rectangle."""
         return self._width
 
     @width.setter
@@ -96,10 +90,7 @@ class Position:
         Set the width of the rectangle.
 
         Args:
-            width (int): The width to set.
-
-        Raises:
-            TypeError: If width is not an integer.
+            width (int): The new width to set.
         """
         if not isinstance(width, int):
             raise TypeError(f"'width' must be 'int', but got {type(width).__name__}")
@@ -107,7 +98,7 @@ class Position:
 
     @property
     def height(self) -> int:
-        """Return the height of the rectangle."""
+        """Get the height of the rectangle."""
         return self._height
 
     @height.setter
@@ -116,14 +107,31 @@ class Position:
         Set the height of the rectangle.
 
         Args:
-            height (int): The height to set.
-
-        Raises:
-            TypeError: If height is not an integer.
+            height (int): The new height to set.
         """
         if not isinstance(height, int):
             raise TypeError(f"'height' must be 'int', but got {type(height).__name__}")
         self._height = height
+
+    def update_position(self, x: int, y: int, width: int, height: int):
+        """
+        Update the position's attributes.
+
+        Args:
+            x (int): The new x-coordinate.
+            y (int): The new y-coordinate.
+            width (int): The new width.
+            height (int): The new height.
+        """
+        self._x = x
+        self._y = y
+        self._width = width
+        self._height = height
+
+    def calculate_center(self) -> (int, int):
+        """Calculate the center point of the rectangle."""
+        return self.x + self.width // 2, self.y + self.height // 2
+
 
 def get_video_path() -> os.PathLike:
     """

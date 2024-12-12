@@ -1,0 +1,7 @@
+train: ../YOLOv5_dataset/train/images
+val: ../YOLOv5_dataset/valid/images
+test: ../YOLOv5_dataset/test/images
+
+nc: 1
+names: ['drone']
+
